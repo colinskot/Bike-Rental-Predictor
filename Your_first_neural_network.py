@@ -7,7 +7,7 @@
 # 
 # 
 
-# In[1]:
+# In[112]:
 
 
 get_ipython().magic('matplotlib inline')
@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 # 
 # A critical step in working with neural networks is preparing the data correctly. Variables on different scales make it difficult for the network to efficiently learn the correct weights. Below, we've written the code to load and prepare the data. You'll learn more about this soon!
 
-# In[2]:
+# In[113]:
 
 
 data_path = 'Bike-Sharing-Dataset/hour.csv'
@@ -30,7 +30,7 @@ data_path = 'Bike-Sharing-Dataset/hour.csv'
 rides = pd.read_csv(data_path)
 
 
-# In[3]:
+# In[114]:
 
 
 rides.head()
@@ -42,7 +42,7 @@ rides.head()
 # 
 # Below is a plot showing the number of bike riders over the first 10 days or so in the data set. (Some days don't have exactly 24 entries in the data set, so it's not exactly 10 days.) You can see the hourly rentals here. This data is pretty complicated! The weekends have lower over all ridership and there are spikes when people are biking to and from work during the week. Looking at the data above, we also have information about temperature, humidity, and windspeed, all of these likely affecting the number of riders. You'll be trying to capture all this with your model.
 
-# In[4]:
+# In[115]:
 
 
 rides[:24*10].plot(x='dteday', y='cnt')
@@ -51,7 +51,7 @@ rides[:24*10].plot(x='dteday', y='cnt')
 # ### Dummy variables
 # Here we have some categorical variables like season, weather, month. To include these in our model, we'll need to make binary dummy variables. This is simple to do with Pandas thanks to `get_dummies()`.
 
-# In[5]:
+# In[116]:
 
 
 dummy_fields = ['season', 'weathersit', 'mnth', 'hr', 'weekday']
@@ -70,7 +70,7 @@ data.head()
 # 
 # The scaling factors are saved so we can go backwards when we use the network for predictions.
 
-# In[6]:
+# In[117]:
 
 
 quant_features = ['casual', 'registered', 'cnt', 'temp', 'hum', 'windspeed']
@@ -86,7 +86,7 @@ for each in quant_features:
 # 
 # We'll save the data for the last approximately 21 days to use as a test set after we've trained the network. We'll use this set to make predictions and compare them with the actual number of riders.
 
-# In[7]:
+# In[118]:
 
 
 # Save data for approximately the last 21 days 
@@ -103,7 +103,7 @@ test_features, test_targets = test_data.drop(target_fields, axis=1), test_data[t
 
 # We'll split the data into two sets, one for training and one for validating as the network is being trained. Since this is time series data, we'll train on historical data, then try to predict on future data (the validation set).
 
-# In[8]:
+# In[119]:
 
 
 # Hold out the last 60 days or so of the remaining data as a validation set
@@ -130,7 +130,7 @@ val_features, val_targets = features[-60*24:], targets[-60*24:]
 # 4. Implement the forward pass in the `run` method.
 #   
 
-# In[ ]:
+# In[132]:
 
 
 class NeuralNetwork(object):
@@ -152,7 +152,7 @@ class NeuralNetwork(object):
         #
         # Note: in Python, you can define a function with a lambda expression,
         # as shown below.
-        self.activation_function = lambda x : 0  # Replace 0 with your sigmoid calculation.
+        self.activation_function = lambda x : 1 / (1 + np.exp(-x))  # Replace 0 with your sigmoid calculation.
         
         ### If the lambda code above is not something you're familiar with,
         # You can uncomment out the following three lines and put your 
@@ -173,42 +173,45 @@ class NeuralNetwork(object):
             targets: 1D array of target values
         
         '''
-        n_records = features.shape[0]
-        delta_weights_i_h = np.zeros(self.weights_input_to_hidden.shape)
-        delta_weights_h_o = np.zeros(self.weights_hidden_to_output.shape)
+        n_records = features.shape[0] # number of headers (columns of data)
+        delta_weights_i_h = np.zeros(self.weights_input_to_hidden.shape) # placeholder
+        delta_weights_h_o = np.zeros(self.weights_hidden_to_output.shape) # placeholder
         for X, y in zip(features, targets):
             #### Implement the forward pass here ####
             ### Forward pass ###
             # TODO: Hidden layer - Replace these values with your calculations.
-            hidden_inputs = None # signals into hidden layer
-            hidden_outputs = None # signals from hidden layer
+            hidden_inputs = np.dot(X, self.weights_input_to_hidden) # signals into hidden layer
+            hidden_outputs = self.activation_function(hidden_inputs) # signals from hidden layer
 
             # TODO: Output layer - Replace these values with your calculations.
-            final_inputs = None # signals into final output layer
-            final_outputs = None # signals from final output layer
+            final_inputs = np.dot(hidden_outputs, self.weights_hidden_to_output) # signals into final output layer
+            final_outputs = final_inputs # signals from final output layer
             
             #### Implement the backward pass here ####
             ### Backward pass ###
 
             # TODO: Output error - Replace this value with your calculations.
-            error = None # Output layer error is the difference between desired target and actual output.
-            
-            # TODO: Calculate the hidden layer's contribution to the error
-            hidden_error = None
+            error = y - final_outputs # Output layer error is the difference between desired target and actual output.
             
             # TODO: Backpropagated error terms - Replace these values with your calculations.
-            output_error_term = None
-            hidden_error_term = None
+            output_error_term = error
+            
+            # TODO: Calculate the hidden layer's contribution to the error
+            hidden_error = np.dot(output_error_term, self.weights_hidden_to_output.T)
+            
+            # TODO: Backpropagated error terms - Replace these values with your calculations.
+            hidden_error_term = hidden_error * hidden_outputs * (1 - hidden_outputs)
 
-            # Weight step (input to hidden)
-            delta_weights_i_h += None
             # Weight step (hidden to output)
-            delta_weights_h_o += None
-
+            delta_weights_h_o += output_error_term * hidden_outputs[:, None]
+            
+            # Weight step (input to hidden)
+            delta_weights_i_h += hidden_error_term * X[:, None]
+            
         # TODO: Update the weights - Replace these values with your calculations.
-        self.weights_hidden_to_output += None # update hidden-to-output weights with gradient descent step
-        self.weights_input_to_hidden += None # update input-to-hidden weights with gradient descent step
- 
+        self.weights_input_to_hidden += self.lr * delta_weights_i_h / n_records # update input-to-hidden weights with gradient descent step
+        self.weights_hidden_to_output += self.lr * delta_weights_h_o / n_records # update hidden-to-output weights with gradient descent step
+         
     def run(self, features):
         ''' Run a forward pass through the network with input features 
         
@@ -219,17 +222,17 @@ class NeuralNetwork(object):
         
         #### Implement the forward pass here ####
         # TODO: Hidden layer - replace these values with the appropriate calculations.
-        hidden_inputs = None # signals into hidden layer
-        hidden_outputs = None # signals from hidden layer
+        hidden_inputs = np.dot(features, self.weights_input_to_hidden) # signals into hidden layer
+        hidden_outputs = self.activation_function(hidden_inputs) # signals from hidden layer
         
         # TODO: Output layer - Replace these values with the appropriate calculations.
-        final_inputs = None # signals into final output layer
-        final_outputs = None # signals from final output layer 
+        final_inputs = np.dot(hidden_outputs, self.weights_hidden_to_output) # signals into final output layer
+        final_outputs = final_inputs # signals from final output layer
         
         return final_outputs
 
 
-# In[ ]:
+# In[133]:
 
 
 def MSE(y, Y):
@@ -240,7 +243,7 @@ def MSE(y, Y):
 # 
 # Run these unit tests to check the correctness of your network implementation. This will help you be sure your network was implemented correctly befor you starting trying to train it. These tests must all be successful to pass the project.
 
-# In[ ]:
+# In[134]:
 
 
 import unittest
@@ -318,15 +321,21 @@ unittest.TextTestRunner().run(suite)
 # ### Choose the number of hidden nodes
 # The more hidden nodes you have, the more accurate predictions the model will make. Try a few different numbers and see how it affects the performance. You can look at the losses dictionary for a metric of the network performance. If the number of hidden units is too low, then the model won't have enough space to learn and if it is too high there are too many options for the direction that the learning can take. The trick here is to find the right balance in number of hidden units you choose.
 
-# In[ ]:
+# - set up hyperparameters with low error on training but not overfitting (long training and many nodes)
+# - as you start overfitting, you'll see the training loss continue to decrease while the validation loss starts to increase
+# - higher learning rate, weights explode
+# - lower learning rate, longer it takes for network to converge
+# - more hidden nodes, the more accurate predictions
+
+# In[218]:
 
 
 import sys
 
 ### Set the hyperparameters here ###
-iterations = 100
-learning_rate = 0.1
-hidden_nodes = 2
+iterations = 10000
+learning_rate = 0.08
+hidden_nodes = 15
 output_nodes = 1
 
 N_i = train_features.shape[1]
@@ -350,7 +359,7 @@ for ii in range(iterations):
     losses['validation'].append(val_loss)
 
 
-# In[ ]:
+# In[219]:
 
 
 plt.plot(losses['train'], label='Training loss')
@@ -363,7 +372,7 @@ _ = plt.ylim()
 # 
 # Here, use the test data to view how well your network is modeling the data. If something is completely wrong here, make sure each step in your network is implemented correctly.
 
-# In[ ]:
+# In[220]:
 
 
 fig, ax = plt.subplots(figsize=(8,4))
@@ -388,3 +397,6 @@ _ = ax.set_xticklabels(dates[12::24], rotation=45)
 # > **Note:** You can edit the text in this cell by double clicking on it. When you want to render the text, press control + enter
 # 
 # #### Your answer below
+# 
+# The model fits well until December 21st. My hypothesis is the following.
+# As soon as there is a holiday, there seems to be a poorer fit in the data even though the previous days have a better fit. Since weekdays are the most common, the fit is the most accurate. The weekends are a bit more rare but, the model still fits relatively well. Although, as soon as we get a more scarce kind of day (holiday, specifically winter holiday) then the model doesn't fit so well. Therefore, there need to be more data for holidays. Also, a custom NN that places more weight on the previous types of days that relate to the current day the most would help counter the scarcity of data.
