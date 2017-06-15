@@ -10,5 +10,4 @@ learning_rate = 0.075
 hidden_nodes = 10
 output_nodes = 20
 ```
-It seems that not much happens to the train vs validation loss on the last 500 iterations, so it may be unnecessary.
 Graphs of the results are found in the results folder.
