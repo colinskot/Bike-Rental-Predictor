@@ -310,18 +310,18 @@ unittest.TextTestRunner().run(suite)
 # - as you start overfitting, you'll see the training loss continue to decrease while the validation loss starts to increase
 # - higher learning rate, weights explode
 # - lower learning rate, longer it takes for network to converge
-# - more hidden nodes, the more accurate predictions
+# - more hidden nodes, the more accurate predictions (but, overfitting is an issue)
 
-# In[23]:
+# In[30]:
 
 
 import sys
 
 ### Set the hyperparameters here ###
-iterations = 7500
-learning_rate = 0.05
-hidden_nodes = 15
-output_nodes = 5
+iterations = 4000
+learning_rate = 0.075
+hidden_nodes = 10
+output_nodes = 20
 
 N_i = train_features.shape[1]
 network = NeuralNetwork(N_i, hidden_nodes, output_nodes, learning_rate)
@@ -344,7 +344,7 @@ for ii in range(iterations):
     losses['validation'].append(val_loss)
 
 
-# In[24]:
+# In[31]:
 
 
 plt.plot(losses['train'], label='Training loss')
@@ -357,7 +357,7 @@ _ = plt.ylim()
 # 
 # Here, use the test data to view how well your network is modeling the data. If something is completely wrong here, make sure each step in your network is implemented correctly.
 
-# In[25]:
+# In[33]:
 
 
 fig, ax = plt.subplots(figsize=(8,4))
