@@ -48,6 +48,7 @@ Temporary Items
 
 # datasets + related
 /data
+/__pycache__
 *.p
 *.ipynb_checkpoints
 *.db
