@@ -1,4 +1,4 @@
-name: logistic-regression
+name: linear-regression
 channels:
 - conda-forge
 - anaconda-fusion
